@@ -26,4 +26,15 @@ def get_category_url(): # general lazada url -> specific categories url -> produ
     return
 
 def crawling():
+    file_location='C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/categories_url.txt'
+    with open(file_location,'r',encoding='utf-8') as f:
+        for line in f:
+            if line.startswith('//'):
+                line='https:'+line
+            response=requests.get(line.strip(),params={'ajax':'true'})
+            # data=response.json()
+            print(response.headers.get("Content-Type"))
+            
     return
+
+crawling()
