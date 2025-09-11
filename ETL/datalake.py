@@ -5,7 +5,15 @@ import random
 from selenium import webdriver
 from selenium.webdriver.edge.options import Options
 import time
+import boto3
+from botocore.client import Config
+from keys import *
 
+
+key_id=datalake_key['keyID']
+key_name=datalake_key['keyName']
+application_key=datalake_key['applicationKey']
+endpoint=datalake_key['Endpoint']
 
 
 def get_category_url(): # general lazada url -> specific categories url -> product data
@@ -56,6 +64,7 @@ def crawling():
                     listitem=response.json().get('listItems')
                     # TODO: datalake
                     
+                    
                 else:
                     print("Punish, thử với Selenium...")
 
@@ -84,4 +93,15 @@ def crawling():
                 delay = random.uniform(10, 20)
                 print(f"Sleep {delay:.2f} seconds...")
                 time.sleep(delay)
+
+
+
+def load_datalake_layer1():
+    return
+
+def load_datalake_layer2():
+    return
+
+def load_datalake_layer3():
+    return
 
