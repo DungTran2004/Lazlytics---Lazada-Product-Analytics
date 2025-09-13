@@ -21,6 +21,59 @@ def current_date():
     today=datetime.now()
     return f'{today.year}-{today.month}-{today.day}'
 
+
+def create_current_date_file():
+    today = datetime.now()
+    date_format = today.strftime("%Y-%m-%d")  
+    folder = "./Lazada"
+    os.makedirs(folder, exist_ok=True)       
+    
+    file_path = f"{folder}/{date_format}.json"
+    
+    if not os.path.exists(file_path):
+        with open(file_path, "w", encoding="utf-8") as f:
+            pass  
+    
+    return file_path
+    
+
+
+def append_to_json(new_data, file_path):
+    """Thêm dữ liệu vào file JSON dạng list"""
+    if os.path.exists(file_path):
+        with open(file_path, 'r', encoding='utf-8') as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                data = []
+    else:
+        data = []
+
+    # Nếu new_data là list thì nối, còn không thì append
+    if isinstance(new_data, list):
+        data.extend(new_data)
+    else:
+        data.append(new_data)
+
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+        
+  
+  
+        
+def get_cookie():
+    edge_options = Options()
+    edge_options.add_argument("--headless")
+    driver = webdriver.Edge(options=edge_options)
+    driver.get("https://www.lazada.vn/")
+    cookies = driver.get_cookies()
+    driver.quit()
+    cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+    return cookie_str  
+
+
+
+
 def get_category_url(): # general lazada url -> specific categories url -> product data
     url='https://www.lazada.vn/#hp-categories'
     headers={'User_Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0',
@@ -44,8 +97,7 @@ def get_category_url(): # general lazada url -> specific categories url -> produ
     return
 
 
-
-
+    
 def crawling():
     file_location = 'C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/categories_url.txt'
     session = requests.Session()
@@ -62,42 +114,21 @@ def crawling():
                     "X-Requested-With": "XMLHttpRequest"
                 }
 
+                
                 response = session.get(line, params={"ajax": "true"}, headers=headers, timeout=15)
 
                 if "application/json" in response.headers.get("Content-Type", ""):
                     print("Got JSON:", line)
                     listitem=response.json().get('listItems')
-                    # TODO: datalake
+                    date_file=create_current_date_file()
+                    append_to_json(listitem, date_file)
                     
                     
-                else:
-                    print("Punish, thử với Selenium...")
-
-
-                    edge_options = Options()
-                    edge_options.add_argument("--headless")
-                    driver = webdriver.Edge(options=edge_options)
-                    driver.get("https://www.lazada.vn/")
-
-                    cookies = driver.get_cookies()
-                    driver.quit()
-
-                    cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
-                    headers["Cookie"] = cookie_str
-
-                    response = session.get(line, params={"ajax": "true"}, headers=headers, timeout=15)
-
-                    if "application/json" in response.headers.get("Content-Type", ""):
-                        print("Got JSON after Selenium:", line)
-                        listitem=response.json().get('listItems')
-                        # TODO: Lưu vào datalake
-                    else:
-                        print("STILL BLOCKED:", line)
-
-
                 delay = random.uniform(10, 20)
                 print(f"Sleep {delay:.2f} seconds...")
                 time.sleep(delay)
+
+
 
 
 def load_datalake_layer1(local_dir):
