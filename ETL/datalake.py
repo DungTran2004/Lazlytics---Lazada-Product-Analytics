@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup
 import json
 import random
 from selenium import webdriver
-from selenium.webdriver.edge.options import Options
+from selenium.webdriver.edge.service import Service
 import time
 import boto3
 from botocore.client import Config
@@ -62,15 +62,18 @@ def append_to_json(new_data, file_path):
   
         
 def get_cookie():
-    edge_options = Options()
-    edge_options.add_argument("--headless")
-    driver = webdriver.Edge(options=edge_options)
-    driver.get("https://www.lazada.vn/")
-    cookies = driver.get_cookies()
-    driver.quit()
-    cookie_str = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
-    return cookie_str  
+    edge_options = webdriver.EdgeOptions()
+    edge_options.add_argument("--headless=new")  # nếu muốn chạy ẩn
+    edge_options.add_argument("--disable-gpu")
+    edge_options.add_argument("--no-sandbox")
 
+    service = Service(r"C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/edgedriver_win64/msedgedriver.exe")
+    driver = webdriver.Edge(service=service, options=edge_options)
+    
+    driver.get("https://www.lazada.vn/")
+    cookie = "; ".join([f"{c['name']}={c['value']}" for c in driver.get_cookies()])
+    driver.quit()
+    return cookie
 
 
 
@@ -160,6 +163,8 @@ def crawling():
                     date_file=create_current_date_file()
                     
                     append_to_json(listitem, date_file)
+            
+            break
                     
             delay = random.uniform(10, 20)
             
@@ -193,3 +198,6 @@ def load_datalake_layer2():
 def load_datalake_layer3():
     return
 
+
+if __name__=='__main__':
+    crawling()
