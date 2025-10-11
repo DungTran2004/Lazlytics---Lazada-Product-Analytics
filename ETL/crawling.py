@@ -2,13 +2,16 @@ import requests
 from bs4 import BeautifulSoup
 import random
 import time
-from untils import *
+from requests.models import PreparedRequest
+from utils import *
 
-def get_category_url(): # general lazada url -> specific categories url -> product data
+
+# TODO: General URL ---> Categories URL ---> Product Data
+
+
+def get_category_url(session,headers): 
     url='https://www.lazada.vn/#hp-categories'
-    headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0',
-             'Referer':'https://www.lazada.vn/'}
-    response=requests.get(url=url,headers=headers)
+    response=session.get(url=url,headers=headers)
     bs=BeautifulSoup(response.content,'html.parser')
     categories_url=bs.find_all('a',class_='pc-custom-link card-categories-li hp-mod-card-hover')
     try:
@@ -28,72 +31,74 @@ def get_category_url(): # general lazada url -> specific categories url -> produ
 
 
     
-def crawling():
-    file_location = 'C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/categories_url.txt'
-    session = requests.Session()
-    headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0",
-    "Referer": "https://www.lazada.vn/",
-    "Accept": "application/json, text/javascript, */*; q=0.01",
-    "X-Requested-With": "XMLHttpRequest"
-}
-    with open(file_location, 'r', encoding='utf-8') as f:
-        for line in f:
-            line=line.strip()
-            if line.startswith('//'):
-                line = 'https:' + line
-                
-                if headers.get('Cookie') is None:
-                    cookie=get_cookie()
-                    if cookie:
-                        print('LAY COOKIE THANH CONG')
-                        headers['Cookie']=cookie
-                    
-                    
-                try:
-                    response = session.get(line, params={"ajax": "true"}, headers=headers, timeout=15)
-                    if response.status_code != 200:
-                        print(f"FAILED {line} - STATUS: {response.status_code}")
-                        continue
-                except requests.RequestException as e:
-                    print(f"LỖI KHI REQUEST {line}: {e}")
-                    continue
+def crawling(url, session, headers, page):
+    line = format_url(url)
+    while True:
+        try:
+            print(f'---------START CRAWLING---------')
+            params = {
+                        "ajax": "true",
+                        "isFirstRequest": "true",
+                        "page": page
+                    }
+            req = PreparedRequest()
+            req.prepare_url(line, params)
+            response = session.get(req.url, headers=headers, timeout=15)
 
-                if "application/json" in response.headers.get("Content-Type", ""):
-                    print("LAY DATA THANH CONG TU: ", line)
+            if response.status_code != 200:
+                print(f"----FAILED {line} - STATUS: {response.status_code}")
+                break
+
+            if "application/json" in response.headers.get("Content-Type", ""):
+                print("----SUCCESS GET DATA FROM: ", line)
+                break
+
+            else:
+                print('MAYBE COOKIE IS END')
+                cookie = get_cookie()
+
+                session.cookies.clear()
+                for c in cookie.split('; '):
+                    if '=' in c:
+                        k, v = c.split('=', 1)
+                        session.cookies.set(k, v)
+
+                continue  
+
+        except requests.RequestException as e:
+            print(f"----ERROR WHEN CRAWLING {line}: {e}")
+            break
+
+    listitem = response.json().get('listItems', [])
+    if not listitem:
+        print(f"----NO DATA (listItems) IN: {line}")
+    else:
+        # date_file = create_current_date_file()
+        # save_data(listitem, date_file)
+        return listitem
+
+        
             
-                else:
-                    print("LAY DATA KHONG THANH CONG TU: ", line)
-                    print("THU LAY LAI COOKIE")
-                    cookie=get_cookie()
-                    headers['Cookie']=cookie
-                    try:
-                        response = session.get(line, params={"ajax": "true"}, headers=headers, timeout=15)
-                        if response.status_code != 200:
-                            print(f"FAILED {line} - STATUS: {response.status_code}")
-                        else:
-                            if "application/json" in response.headers.get("Content-Type", ""):
-                                print("LAY DATA THANH CONG TU: ", line)
-                            else:
-                                print("KHONG THE LAY DATA TU: ", line)
-                                continue
-                    except requests.RequestException as e:
-                        print(f"LỖI KHI REQUEST {line}: {e}")
-                        continue
-                    
-                
-                listitem=response.json().get('listItems',[])
-                if not listitem:
-                    print(f"KHÔNG CÓ DATA TRONG: {line}")
-                    continue
-                else:
-                    date_file=create_current_date_file()
-                    
-                    save_data(listitem, date_file)
             
-                    
-            delay = random.uniform(10, 20)
-            
-            print(f"Sleep {delay:.2f} seconds...")
-            
-            time.sleep(delay)
+if __name__=='__main__':
+    session=requests.session()
+    headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0",
+                "Referer": "https://www.lazada.vn/",
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        
+    cookie = get_cookie()
+    domain = urlparse(url).netloc 
+
+    for c in cookie.split('; '):
+        if '=' in c:
+            k, v = c.split('=', 1)
+            session.cookies.set(k, v, domain=domain)
+
+    with open('C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/categories_url.txt', 'r', encoding='utf-8') as f:
+        for line in f:
+            # a=crawling(url=line.strip(), session=session, headers=headers, page=1)
+            # print(a)
+            crawling(url=line.strip(), session=session, headers=headers, page=1)
