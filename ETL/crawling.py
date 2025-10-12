@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import random
 import time
 from requests.models import PreparedRequest
+from urllib.parse import urlparse
 from utils import *
 
 
@@ -46,36 +47,36 @@ def crawling(url, session, headers, page):
             response = session.get(req.url, headers=headers, timeout=15)
 
             if response.status_code != 200:
-                print(f"----FAILED {line} - STATUS: {response.status_code}")
+                print(f"----FAILED {req.url} - STATUS: {response.status_code}")
                 break
 
             if "application/json" in response.headers.get("Content-Type", ""):
-                print("----SUCCESS GET DATA FROM: ", line)
+                print("----SUCCESS GET DATA FROM: ", req.url)
                 break
 
             else:
                 print('MAYBE COOKIE IS END')
-                cookie = get_cookie()
-
                 session.cookies.clear()
+                cookie = get_cookie()
+                domain = urlparse(url).netloc 
+
                 for c in cookie.split('; '):
                     if '=' in c:
                         k, v = c.split('=', 1)
-                        session.cookies.set(k, v)
-
+                        session.cookies.set(k, v, domain=domain)
                 continue  
 
         except requests.RequestException as e:
-            print(f"----ERROR WHEN CRAWLING {line}: {e}")
+            print(f"----ERROR WHEN CRAWLING {req.url}: {e}")
             break
 
-    listitem = response.json().get('listItems', [])
+    listitem = response.json().get('mods',[])['listItems']
     if not listitem:
-        print(f"----NO DATA (listItems) IN: {line}")
+        print(f"----NO DATA (listItems) IN: {req.url}")
     else:
-        # date_file = create_current_date_file()
-        # save_data(listitem, date_file)
-        return listitem
+        date_file = create_current_date_file()
+        save_data(listitem, date_file)
+        return
 
         
             
@@ -88,17 +89,15 @@ if __name__=='__main__':
                 "Accept": "application/json, text/javascript, */*; q=0.01",
                 "X-Requested-With": "XMLHttpRequest"
             }
-        
+    
+    print("------GETTING COOKIE FOR THE 1ST TIME------")
     cookie = get_cookie()
-    domain = urlparse(url).netloc 
-
+    domain = "www.lazada.vn"
     for c in cookie.split('; '):
         if '=' in c:
             k, v = c.split('=', 1)
             session.cookies.set(k, v, domain=domain)
-
+            
     with open('C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/categories_url.txt', 'r', encoding='utf-8') as f:
         for line in f:
-            # a=crawling(url=line.strip(), session=session, headers=headers, page=1)
-            # print(a)
             crawling(url=line.strip(), session=session, headers=headers, page=1)

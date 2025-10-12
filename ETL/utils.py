@@ -47,19 +47,25 @@ def save_data(new_data, file_path):
         
         
 def get_cookie():
-    edge_options = webdriver.EdgeOptions()
-    edge_options.add_argument("--headless=new")  # nếu muốn chạy ẩn
-    edge_options.add_argument("--disable-gpu")
-    edge_options.add_argument("--no-sandbox")
+    try:
+        edge_options = webdriver.EdgeOptions()
+        edge_options.add_argument("--headless=new")  # nếu muốn chạy ẩn
+        edge_options.add_argument("--disable-gpu")
+        edge_options.add_argument("--log-level=3")  # 0=all, 3=error only
+        edge_options.add_argument("--silent")
+        edge_options.add_argument("--no-sandbox")
 
-    service = Service(r"C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/edgedriver_win64/msedgedriver.exe")
-    driver = webdriver.Edge(service=service, options=edge_options)
-    
-    driver.get("https://www.lazada.vn/")
-    time.sleep(3)
-    cookie = "; ".join([f"{c['name']}={c['value']}" for c in driver.get_cookies()])
+        service = Service(r"C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/edgedriver_win64/msedgedriver.exe")
+        driver = webdriver.Edge(service=service, options=edge_options)
+        
+        driver.get("https://www.lazada.vn/")
+        time.sleep(3)
+        cookie = "; ".join([f"{c['name']}={c['value']}" for c in driver.get_cookies()])
+        print("SUCCESS GET COOKIE")
+    except Exception as e:
+        print("ERROR WHEN GET COOKIE: ",e)
+        
     driver.quit()
-    
     return cookie
 
 
