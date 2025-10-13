@@ -5,20 +5,27 @@ from selenium import webdriver
 from selenium.webdriver.edge.service import Service
 from urllib.parse import urlparse, urlunparse
 import time
+import pandas as pd
 
-
-def create_current_date_file():
-    today = datetime.now()
-    date_format = today.strftime("%Y-%m-%d")  
-    folder = "C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/RawData/Lazada"
-    os.makedirs(folder, exist_ok=True)       
+def create_current_date_file(platform:str,batch:int):
+    if platform not in ['Lazada', 'Tiki', 'Shopee']:
+        raise ValueError("Platform must be one of ['Lazada', 'Tiki', 'Shopee']")
     
-    file_path = f"{folder}/{date_format}.json"
+    
+    root_path = 'C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/RawData'
+    today = datetime.now()
+    date_format = today.strftime("%Y-%m-%d")
+
+    folder_path = os.path.join(root_path, platform)
+    os.makedirs(folder_path, exist_ok=True) 
+    
+    file_path = os.path.join(folder_path, f"{date_format}_{batch}.json")
+    
     if not os.path.exists(file_path):
         with open(file_path, "w", encoding="utf-8") as f:
             pass
+    
     return file_path
-
 
 
 
@@ -92,3 +99,8 @@ def format_url(url: str) -> str:
     ))
     
     return formatted
+
+
+
+def to_parquet(json_file_path, platform):
+    return

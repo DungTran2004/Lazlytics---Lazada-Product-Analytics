@@ -10,7 +10,7 @@ endpoint=datalake_key['Endpoint']
 
 
 
-def load_datalake_layer1(local_dir):
+def load_datalake_bronze(local_dir):
     s3=boto3.client(
     "s3",
     endpoint_url=endpoint,

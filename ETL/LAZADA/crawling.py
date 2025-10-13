@@ -4,7 +4,7 @@ import random
 import time
 from requests.models import PreparedRequest
 from urllib.parse import urlparse
-from utils import *
+from ETL.LAZADA.utils import *
 
 
 # TODO: General URL ---> Categories URL ---> Product Data
@@ -16,7 +16,7 @@ def get_category_url(session,headers):
     bs=BeautifulSoup(response.content,'html.parser')
     categories_url=bs.find_all('a',class_='pc-custom-link card-categories-li hp-mod-card-hover')
     try:
-        file_location='C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/categories_url.txt'
+        file_location='C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/LAZADA/categories_url.txt'
         with open(file_location,'r',encoding='utf-8') as f:
                 items = set(line.strip() for line in f)
     except FileNotFoundError:
@@ -32,7 +32,7 @@ def get_category_url(session,headers):
 
 
     
-def crawling(url, session, headers, page):
+def crawling(url, session, headers, page, batch):
     line = format_url(url)
     while True:
         try:
@@ -74,7 +74,7 @@ def crawling(url, session, headers, page):
     if not listitem:
         print(f"----NO DATA (listItems) IN: {req.url}")
     else:
-        date_file = create_current_date_file()
+        date_file = create_current_date_file(platform='LAZADA',batch=batch)
         save_data(listitem, date_file)
         return
 
@@ -98,6 +98,7 @@ if __name__=='__main__':
             k, v = c.split('=', 1)
             session.cookies.set(k, v, domain=domain)
             
-    with open('C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/categories_url.txt', 'r', encoding='utf-8') as f:
-        for line in f:
-            crawling(url=line.strip(), session=session, headers=headers, page=1)
+    with open('C:/MY_PROJECT/Lazlytics---Lazada Product Analytics/ETL/LAZADA/categories_url.txt', 'r', encoding='utf-8') as f:
+        for page in range(1,6):
+            for line in f:
+                crawling(url=line.strip(), session=session, headers=headers, page=1)
