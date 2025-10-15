@@ -30,7 +30,7 @@ def create_current_date_file(platform:str,batch:int):
 
 
 
-def save_data(new_data, file_path):
+def save_data(new_data, file_path): # Have to update, hien tai phai doc toan bo du lieu cua file, nen sua thanh append truc tiep
     if os.path.exists(file_path):
         with open(file_path, 'r', encoding='utf-8') as f:
             try:
