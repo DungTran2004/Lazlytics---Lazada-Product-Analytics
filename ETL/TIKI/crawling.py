@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-from .utils import *
+from utils import *
 
 
 # TODO: General URL ---> Categories URL ---> API Url ---> Product Data
@@ -59,5 +59,7 @@ def crawling(category_url:str,session,headers,page:int,batch=None):
 if __name__=='__main__':
     session=requests.session()
     headers={'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36 Edg/141.0.0.0'}
-    print(crawling('/nha-sach-tiki/c8322',session=session,headers=headers,page=1))
+    file_path=create_current_date_file('Tiki',1)
+    data=crawling('/nha-sach-tiki/c8322',session=session,headers=headers,page=1)
+    save_data(data,file_path)
     
